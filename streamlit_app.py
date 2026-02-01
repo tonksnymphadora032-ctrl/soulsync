@@ -68,8 +68,6 @@ def get_tasks():
 
     docs = db.collection("tasks").stream()
     return [d.to_dict()["task"] for d in docs]
-
-
 # ---------- UI ----------
 
 st.title("🌱 SoulSync")
@@ -77,4 +75,33 @@ st.write("How are you feeling today?")
 
 mood = st.selectbox(
     "Mood",
-    ["Happy", "Okay", "Anxious", "Stressed",]()
+    ["Happy", "Okay", "Anxious", "Stressed", "Low"]
+)
+
+st.subheader("📝 Journal")
+
+entry = st.text_area("Write here...")
+
+if st.button("Save Journal"):
+    save_journal(entry, mood)
+
+
+st.subheader("✅ Today's Tasks")
+
+task = st.text_input("Enter task")
+
+if st.button("Add Task"):
+    add_task(task)
+    st.experimental_rerun()
+
+
+tasks = get_tasks()
+
+if tasks:
+    st.write("Your Tasks:")
+    for t in tasks:
+        st.write("•", t)
+
+
+st.markdown("---")
+st.markdown("_You are doing your best 💙_")
