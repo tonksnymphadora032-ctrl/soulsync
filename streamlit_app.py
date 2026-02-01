@@ -1,62 +1,55 @@
 import streamlit as st
-import sqlite3
+import firebase_admin
+from firebase_admin import credentials, firestore
+import json
 from datetime import date
 
-conn = sqlite3.connect("soulsync.db", check_same_thread=False)
-cur = conn.cursor()
+st.set_page_config(page_title="SoulSync", page_icon="🌱")
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS journal (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entry TEXT,
-    mood TEXT,
-    date TEXT
-)
-""")
+# ---------- FIREBASE INIT ----------
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    task TEXT
-)
-""")
+if not firebase_admin._apps:
+    try:
+        firebase_dict = json.loads(st.secrets["firebase_key"])
+        cred = credentials.Certificate(firebase_dict)
+        firebase_admin.initialize_app(cred)
+        st.success("✅ Firebase Connected")
+    except Exception as e:
+        st.error("❌ Firebase Error: " + str(e))
 
-conn.commit()
+db = firestore.client()
 
+# ---------- FUNCTIONS ----------
 
 def save_journal(entry, mood):
-    today = date.today().isoformat()
-
     if entry.strip() == "":
         st.warning("⚠️ Please write something first.")
         return
 
-    cur.execute(
-        "INSERT INTO journal (entry, mood, date) VALUES (?, ?, ?)",
-        (entry, mood, today)
-    )
-    conn.commit()
+    db.collection("journals").add({
+        "entry": entry,
+        "mood": mood,
+        "date": str(date.today())
+    })
 
-    st.success("💙 Your thoughts are saved safely.")
+    st.success("💙 Journal saved!")
 
 
 def add_task(task):
     if task.strip() == "":
         return
 
-    cur.execute(
-        "INSERT INTO tasks (task) VALUES (?)",
-        (task,)
-    )
-    conn.commit()
+    db.collection("tasks").add({
+        "task": task,
+        "date": str(date.today())
+    })
 
 
 def get_tasks():
-    cur.execute("SELECT task FROM tasks")
-    return [t[0] for t in cur.fetchall()]
+    docs = db.collection("tasks").stream()
+    return [d.to_dict()["task"] for d in docs]
 
-
-st.set_page_config(page_title="SoulSync", page_icon="🌱")
+# ---------- UI ----------
 
 st.title("🌱 SoulSync")
 st.write("How are you feeling today?")
@@ -73,7 +66,6 @@ entry = st.text_area("Write here...")
 if st.button("Save Journal"):
     save_journal(entry, mood)
 
-
 st.subheader("✅ Today's Tasks")
 
 task = st.text_input("Enter task")
@@ -81,7 +73,6 @@ task = st.text_input("Enter task")
 if st.button("Add Task"):
     add_task(task)
     st.experimental_rerun()
-
 
 tasks = get_tasks()
 
@@ -92,6 +83,3 @@ if tasks:
 
 st.markdown("---")
 st.markdown("_You are doing your best 💙_")
-
-
-
