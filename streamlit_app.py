@@ -8,20 +8,31 @@ st.set_page_config(page_title="SoulSync", page_icon="🌱")
 
 # ---------- FIREBASE INIT ----------
 
-if not firebase_admin._apps:
-    try:
+db = None   # default
+
+try:
+    if not firebase_admin._apps:
         firebase_dict = json.loads(st.secrets["firebase_key"])
+
         cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
-        st.success("✅ Firebase Connected")
-    except Exception as e:
-        st.error("❌ Firebase Error: " + str(e))
 
-db = firestore.client()
+    db = firestore.client()
+    st.success("✅ Firebase Connected")
+
+except Exception as e:
+    st.error("❌ Firebase Init Failed:")
+    st.code(str(e))
+
 
 # ---------- FUNCTIONS ----------
 
 def save_journal(entry, mood):
+
+    if db is None:
+        st.error("Firebase not connected")
+        return
+
     if entry.strip() == "":
         st.warning("⚠️ Please write something first.")
         return
@@ -36,6 +47,11 @@ def save_journal(entry, mood):
 
 
 def add_task(task):
+
+    if db is None:
+        st.error("Firebase not connected")
+        return
+
     if task.strip() == "":
         return
 
@@ -46,8 +62,13 @@ def add_task(task):
 
 
 def get_tasks():
+
+    if db is None:
+        return []
+
     docs = db.collection("tasks").stream()
     return [d.to_dict()["task"] for d in docs]
+
 
 # ---------- UI ----------
 
@@ -56,30 +77,4 @@ st.write("How are you feeling today?")
 
 mood = st.selectbox(
     "Mood",
-    ["Happy", "Okay", "Anxious", "Stressed", "Low"]
-)
-
-st.subheader("📝 Journal")
-
-entry = st.text_area("Write here...")
-
-if st.button("Save Journal"):
-    save_journal(entry, mood)
-
-st.subheader("✅ Today's Tasks")
-
-task = st.text_input("Enter task")
-
-if st.button("Add Task"):
-    add_task(task)
-    st.experimental_rerun()
-
-tasks = get_tasks()
-
-if tasks:
-    st.write("Your Tasks:")
-    for t in tasks:
-        st.write("•", t)
-
-st.markdown("---")
-st.markdown("_You are doing your best 💙_")
+    ["Happy", "Okay", "Anxious", "Stressed",]()
