@@ -6,18 +6,13 @@ from datetime import date
 
 st.set_page_config(page_title="SoulSync", page_icon="🌱")
 
-db = None
-
-except Exception as e:
-    st.code(str(e))
-# ---------- FIREBASE INIT ----------
+# ---------------- FIREBASE INIT ----------------
 
 db = None
 
 try:
     if not firebase_admin._apps:
         firebase_dict = json.loads(st.secrets["firebase_file"])
-
         cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
 
@@ -29,12 +24,12 @@ except Exception as e:
     st.code(str(e))
 
 
-
-# ---------- FUNCTIONS ----------
+# ---------------- FUNCTIONS ----------------
 
 def save_journal(entry, mood):
 
     if db is None:
+        st.error("Firebase not connected")
         return
 
     if entry.strip() == "":
@@ -72,7 +67,7 @@ def get_tasks():
     return [d.to_dict()["task"] for d in docs]
 
 
-# ---------- UI ----------
+# ---------------- UI ----------------
 
 st.title("🌱 SoulSync")
 
@@ -103,3 +98,7 @@ tasks = get_tasks()
 if tasks:
     for t in tasks:
         st.write("•", t)
+
+
+st.markdown("---")
+st.markdown("_You are doing your best 💙_")
