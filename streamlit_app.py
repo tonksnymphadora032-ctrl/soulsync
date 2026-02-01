@@ -1,7 +1,7 @@
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
-import tempfile
+import json
 from datetime import date
 
 st.set_page_config(page_title="SoulSync", page_icon="🌱")
@@ -13,12 +13,9 @@ db = None
 try:
     if not firebase_admin._apps:
 
-        # Write secret to temp file
-        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
-            f.write(st.secrets["firebase_file"])
-            key_path = f.name
+        firebase_dict = json.loads(st.secrets["firebase_key"])
 
-        cred = credentials.Certificate(key_path)
+        cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
 
     db = firestore.client()
@@ -34,7 +31,6 @@ except Exception as e:
 def save_journal(entry, mood):
 
     if db is None:
-        st.error("Firebase not connected")
         return
 
     if entry.strip() == "":
@@ -103,6 +99,3 @@ tasks = get_tasks()
 if tasks:
     for t in tasks:
         st.write("•", t)
-
-st.markdown("---")
-st.markdown("_You are doing your best 💙_")
