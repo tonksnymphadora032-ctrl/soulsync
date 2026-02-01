@@ -23,7 +23,7 @@ def save_journal(entry, mood):
         "date": str(date.today())
     }).execute()
 
-    st.success("Saved!")
+    st.success("✅ Journal Saved!")
 
 
 def add_task(task):
@@ -54,6 +54,8 @@ mood = st.selectbox(
     ["Happy", "Okay", "Anxious", "Stressed", "Low"]
 )
 
+# ---------- JOURNAL ----------
+
 st.subheader("📝 Journal")
 
 entry = st.text_area("Write here")
@@ -62,17 +64,21 @@ if st.button("Save Journal"):
     save_journal(entry, mood)
 
 
+# ---------- TASKS ----------
+
 st.subheader("✅ Tasks")
 
 task = st.text_input("Enter task")
 
 if st.button("Add Task"):
     add_task(task)
-    st.experimental_rerun()
+    st.rerun()   # ✅ FIXED LINE (NO experimental)
 
 
 tasks = get_tasks()
 
 if tasks:
+    st.subheader("📌 Your Tasks")
+
     for t in tasks:
-        st.write("•", t)
+        st.
