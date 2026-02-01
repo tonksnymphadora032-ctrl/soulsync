@@ -1,90 +1,73 @@
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore
-import json
+from supabase import create_client
 from datetime import date
+
+# ---------------- CONFIG ----------------
 
 st.set_page_config(page_title="SoulSync", page_icon="🌱")
 
-# ---------------- FIREBASE INIT ----------------
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
-db = None
-
-try:
-    if not firebase_admin._apps:
-        firebase_dict = json.loads(st.secrets["firebase_file"])
-        cred = credentials.Certificate(firebase_dict)
-        firebase_admin.initialize_app(cred)
-
-    db = firestore.client()
-    st.success("✅ Firebase Connected")
-
-except Exception as e:
-    st.error("❌ Firebase Error")
-    st.code(str(e))
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 # ---------------- FUNCTIONS ----------------
 
 def save_journal(entry, mood):
 
-    if db is None:
-        st.error("Firebase not connected")
-        return
-
     if entry.strip() == "":
+        st.warning("Write something first")
         return
 
-    db.collection("journals").add({
+    supabase.table("journals").insert({
         "entry": entry,
         "mood": mood,
         "date": str(date.today())
-    })
+    }).execute()
 
     st.success("Saved!")
 
 
 def add_task(task):
 
-    if db is None:
-        return
-
     if task.strip() == "":
         return
 
-    db.collection("tasks").add({
+    supabase.table("tasks").insert({
         "task": task,
         "date": str(date.today())
-    })
+    }).execute()
 
 
 def get_tasks():
 
-    if db is None:
-        return []
+    data = supabase.table("tasks").select("task").execute()
 
-    docs = db.collection("tasks").stream()
-    return [d.to_dict()["task"] for d in docs]
+    if data.data:
+        return [x["task"] for x in data.data]
+
+    return []
 
 
 # ---------------- UI ----------------
 
-st.title("🌱 SoulSync")
+st.title("🌱 SoulSync 🌱")
 
 mood = st.selectbox(
-    "Mood",
+    "How are you feeling today?",
     ["Happy", "Okay", "Anxious", "Stressed", "Low"]
 )
 
 st.subheader("📝 Journal")
 
-entry = st.text_area("Write here")
+entry = st.text_area("Write here...")
 
 if st.button("Save Journal"):
     save_journal(entry, mood)
 
 
-st.subheader("✅ Tasks")
+st.subheader("✅ Today's Tasks")
 
 task = st.text_input("Enter task")
 
@@ -101,4 +84,4 @@ if tasks:
 
 
 st.markdown("---")
-st.markdown("_You are doing your best 💙_")
+st.markdown("💙 You are doing your best")
