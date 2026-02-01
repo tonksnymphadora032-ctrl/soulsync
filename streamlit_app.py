@@ -8,13 +8,15 @@ st.set_page_config(page_title="SoulSync", page_icon="🌱")
 
 db = None
 
+except Exception as e:
+    st.code(str(e))
 # ---------- FIREBASE INIT ----------
+
+db = None
 
 try:
     if not firebase_admin._apps:
-
-     firebase_dict = json.loads(st.secrets["firebase_file"])
-
+        firebase_dict = json.loads(st.secrets["firebase_file"])
 
         cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
@@ -25,6 +27,7 @@ try:
 except Exception as e:
     st.error("❌ Firebase Error")
     st.code(str(e))
+
 
 
 # ---------- FUNCTIONS ----------
