@@ -1,27 +1,31 @@
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
-import json
+import tempfile
 from datetime import date
 
 st.set_page_config(page_title="SoulSync", page_icon="🌱")
 
-# ---------- FIREBASE INIT ----------
+db = None
 
-db = None   # default
+# ---------- FIREBASE INIT ----------
 
 try:
     if not firebase_admin._apps:
-        firebase_dict = json.loads(st.secrets["firebase_key"])
 
-        cred = credentials.Certificate(firebase_dict)
+        # Write secret to temp file
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+            f.write(st.secrets["firebase_file"])
+            key_path = f.name
+
+        cred = credentials.Certificate(key_path)
         firebase_admin.initialize_app(cred)
 
     db = firestore.client()
     st.success("✅ Firebase Connected")
 
 except Exception as e:
-    st.error("❌ Firebase Init Failed:")
+    st.error("❌ Firebase Error")
     st.code(str(e))
 
 
@@ -34,7 +38,6 @@ def save_journal(entry, mood):
         return
 
     if entry.strip() == "":
-        st.warning("⚠️ Please write something first.")
         return
 
     db.collection("journals").add({
@@ -43,13 +46,12 @@ def save_journal(entry, mood):
         "date": str(date.today())
     })
 
-    st.success("💙 Journal saved!")
+    st.success("Saved!")
 
 
 def add_task(task):
 
     if db is None:
-        st.error("Firebase not connected")
         return
 
     if task.strip() == "":
@@ -68,10 +70,11 @@ def get_tasks():
 
     docs = db.collection("tasks").stream()
     return [d.to_dict()["task"] for d in docs]
+
+
 # ---------- UI ----------
 
 st.title("🌱 SoulSync")
-st.write("How are you feeling today?")
 
 mood = st.selectbox(
     "Mood",
@@ -80,13 +83,13 @@ mood = st.selectbox(
 
 st.subheader("📝 Journal")
 
-entry = st.text_area("Write here...")
+entry = st.text_area("Write here")
 
 if st.button("Save Journal"):
     save_journal(entry, mood)
 
 
-st.subheader("✅ Today's Tasks")
+st.subheader("✅ Tasks")
 
 task = st.text_input("Enter task")
 
@@ -98,10 +101,8 @@ if st.button("Add Task"):
 tasks = get_tasks()
 
 if tasks:
-    st.write("Your Tasks:")
     for t in tasks:
         st.write("•", t)
-
 
 st.markdown("---")
 st.markdown("_You are doing your best 💙_")
