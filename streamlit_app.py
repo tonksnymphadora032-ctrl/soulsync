@@ -65,6 +65,15 @@ if st.button("Save Journal"):
 
 
 # ---------- TASKS ----------
+
+st.subheader("✅ Tasks")
+
+task = st.text_input("Enter task")
+
+if st.button("Add Task"):
+    add_task(task)
+    st.rerun()
+
 tasks = get_tasks()
 
 if tasks:
