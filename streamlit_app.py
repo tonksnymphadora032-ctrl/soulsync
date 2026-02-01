@@ -13,7 +13,8 @@ db = None
 try:
     if not firebase_admin._apps:
 
-        firebase_dict = json.loads(st.secrets["firebase_key"])
+     firebase_dict = json.loads(st.secrets["firebase_file"])
+
 
         cred = credentials.Certificate(firebase_dict)
         firebase_admin.initialize_app(cred)
